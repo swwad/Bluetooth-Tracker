@@ -14,7 +14,9 @@ import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Parameters;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.SystemClock;
@@ -37,7 +39,7 @@ public class MonitorDeviceService extends Service {
 				break;
 			}
 		}
-		
+
 		if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address), "").length() == 0) {
 			stopSelf();
 		}
@@ -50,18 +52,27 @@ public class MonitorDeviceService extends Service {
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
 		}
-		
+
 		if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_setting_auto_start), false) || intent.getBooleanExtra(SettingActivity.StartFromActivity, false)) {
-			IntentFilter filter1 = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-			registerReceiver(brReceiver, filter1);
-			IntentFilter filter2 = new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
-			registerReceiver(brReceiver, filter2);
+			registerReceiver(brReceiver, new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED));
+			registerReceiver(brReceiver, new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED));
+			registerReceiver(brReceiver, new IntentFilter(BluetoothDevice.ACTION_ACL_CONNECTED));
 			showNotification();
 		} else {
 			stopSelf();
 		}
 		return super.onStartCommand(intent, flags, startId);
 	}
+
+	Handler hFindDevice = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			if (android.os.Build.VERSION.SDK_INT < 11) {
+
+				super.handleMessage(msg);
+			}
+		}
+	};
 
 	private final BroadcastReceiver brReceiver = new BroadcastReceiver() {
 
@@ -73,18 +84,21 @@ public class MonitorDeviceService extends Service {
 					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_audio), false)) {
 						warningAudio();
 					}
-
 					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_screen), false)) {
 						warningScreen();
 					}
-
 					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_flash), false)) {
 						warningFlash();
 					}
-
 					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_vibrator), false)) {
 						warningVibrator();
 					}
+				}
+				hFindDevice.sendEmptyMessage(0);
+			} else if ((BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(intent.getAction())) || (BluetoothDevice.ACTION_ACL_CONNECTED.equals(intent.getAction()))) {
+				BluetoothDevice bdDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+				if (bdDevice.getAddress().equalsIgnoreCase(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address), ""))) {
+					hFindDevice.removeCallbacksAndMessages(null);
 				}
 			}
 		}
