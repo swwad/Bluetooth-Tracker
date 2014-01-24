@@ -13,6 +13,7 @@
     <string name="warning_audio">聲音</string>
     <string name="warning_vibrate">震動</string>
     <string name="warning_popwinodw">對話框提示</string>
+    <string name="warning_dialog">警告!\n%s 離開連線範圍，請立刻確認。</string>
     <string name="action_settings">連接裝置設定</string>
     <string name="select_btdevice">選取藍芽設備</string>
     <string name="auto_start">開機自動啟動</string>
@@ -30,9 +31,9 @@
     </string-array>
     <string-array name="warning_option_value">
         <item>0</item>
-        <item>5000</item>
-        <item>15000</item>
-        <item>60000</item>
+        <item>5</item>
+        <item>15</item>
+        <item>60</item>
     </string-array>
 
     <!-- Preference Key -->

@@ -9,7 +9,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothHeadset;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -34,8 +33,8 @@ public class MonitorDeviceService extends Service {
 	Camera camera;
 	Parameters camera_parameters;
 	int iBackCameraID = -1;
-	BluetoothHeadset btHeadset;
 	Set<BluetoothDevice> pairedDevices = new HashSet<BluetoothDevice>();
+	boolean bStopAllWarning = false;
 
 	@Override
 	public void onCreate() {
@@ -96,40 +95,20 @@ public class MonitorDeviceService extends Service {
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
+			bStopAllWarning = false;
 			BluetoothDevice bdDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 			if ((BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(intent.getAction())) || (BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED.equals(intent.getAction()))) {
 				if (bdDevice.getAddress().equalsIgnoreCase(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address), ""))) {
-					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_audio), false)) {
-						warningAudio();
-					}
+
+					warningAudio(Integer.valueOf(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_audio), "0")));
+					warningFlash(Integer.valueOf(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_flash), "0")));
+					warningVibrator(Integer.valueOf(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_vibrator), "0")));
 					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_screen), false)) {
 						warningScreen();
 					}
-					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_flash), false)) {
-						warningFlash();
+					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_popwindow), false)) {
+						warningDialog();
 					}
-					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_vibrator), false)) {
-						warningVibrator();
-					}
-
-					AlertDialog.Builder builder = new AlertDialog.Builder(MonitorDeviceService.this);
-					builder.setTitle("提示");
-					builder.setMessage("該下車了");
-					builder.setNegativeButton("取消", new OnClickListener() {
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-
-						}
-					});
-					builder.setPositiveButton("確定", new OnClickListener() {
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-
-						}
-					});
-					final AlertDialog dialog = builder.create();
-					dialog.getWindow().setType((WindowManager.LayoutParams.TYPE_SYSTEM_ALERT));
-					dialog.show();
 				}
 			}
 			// else if
@@ -154,12 +133,37 @@ public class MonitorDeviceService extends Service {
 		}
 	}
 
+	public void warningDialog() {
+		Intent dialogIntent = new Intent(getBaseContext(), SettingActivity.class);
+		dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		getApplication().startActivity(dialogIntent);
+
+		AlertDialog.Builder builder = new AlertDialog.Builder(MonitorDeviceService.this);
+		builder.setTitle(R.string.app_name);
+		builder.setMessage(String.format(getString(R.string.warning_dialog), getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_name), "")));
+		builder.setPositiveButton(R.string.option_ok, new OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				bStopAllWarning = true;
+			}
+		});
+		final AlertDialog dialog = builder.create();
+		dialog.getWindow().setType((WindowManager.LayoutParams.TYPE_SYSTEM_ALERT));
+		dialog.show();
+	}
+
 	public void warningVibrator(final int iSec) {
 		new Thread() {
 			public void run() {
 				synchronized (this) {
 					for (int i = 0; i < iSec; i++) {
+						if (bStopAllWarning) break;
 						((Vibrator) getApplication().getSystemService(Service.VIBRATOR_SERVICE)).vibrate(1000);
+						try {
+							Thread.sleep(1050);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
 					}
 				}
 			}
@@ -179,14 +183,14 @@ public class MonitorDeviceService extends Service {
 	}
 
 	public void warningFlash(final int iSec) {
+		camera = Camera.open(iBackCameraID);
+		camera_parameters = camera.getParameters();
 		new Thread() {
 			public void run() {
 				synchronized (this) {
 					if (iBackCameraID != -1) {
-						camera = Camera.open(iBackCameraID);
-						camera_parameters = camera.getParameters();
-
 						for (int i = 0; i < iSec; i++) {
+							if (bStopAllWarning) break;
 							camera_parameters.setFlashMode(Parameters.FLASH_MODE_TORCH);
 							camera.setParameters(camera_parameters);
 							SystemClock.sleep(500);
@@ -202,14 +206,28 @@ public class MonitorDeviceService extends Service {
 		}.start();
 	}
 
-	public void warningAudio() {
+	public void warningAudio(final int iSec) {
 		AudioManager audioManager = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
 		audioManager.setSpeakerphoneOn(true);
 		// setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		audioManager.setMode(AudioManager.STREAM_MUSIC);
 		audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0);
-		MediaPlayer playerSound = MediaPlayer.create(this, R.raw.bb);
-		playerSound.start();
+		final MediaPlayer playerSound = MediaPlayer.create(this, R.raw.bb_1);
+		new Thread() {
+			public void run() {
+				synchronized (this) {
+					for (int i = 0; i < iSec; i++) {
+						if (bStopAllWarning) break;
+						playerSound.start();
+						try {
+							Thread.sleep(1100);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+		}.start();
 	}
 
 	private void showNotification() {

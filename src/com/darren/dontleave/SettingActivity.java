@@ -20,12 +20,13 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 
 	Set<BluetoothDevice> pairedDevices = new HashSet<BluetoothDevice>();
 	public final static String StartFromActivity = "StartFromActivity";
+	String IABKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAutzaL2p34g8tkLuySwac0dUT30sR5s61nhI02VITWJSdxZ3y4P6NW1vb8d9a+6dfZYpzYQPkebKVwlvJYFG7xwPeHcqyqCNc5EWa3hPaVbPHfeUrM/AI/pe/Go1LeniZpt27M0A7rUckEDryI+W5Eqp1d9+b0ie3L2aUzKKEKQGa+RDPGfXlVD7zuPuIyZZtgwzu2IDz8SZkBGTYQnbZe4vVetw0o/Vz7g4b3XPeGEYxYlpyj3K5yT93u2T2iUKfdRBHapx3p23xWrA0Ojh+GCBHAn0Jr/X83BqtnPGssrIdUHsZdo5KokQbieqOm6OCfgCulqejbqdGqKsECqj0qQIDAQAB";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		addPreferencesFromResource(R.xml.setting_preference);
-		// reStartService();
+		reStartService();
 	}
 
 	@Override
@@ -128,10 +129,10 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 					break;
 				}
 			}
-			// reStartService();
+			reStartService();
 		} else if (getString(R.string.key_setting_auto_start).equals(preference.getKey())) {
 			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.pref_setting_auto_start), (Boolean) newValue).commit();
-			// reStartService();
+			reStartService();
 		} else if (getString(R.string.key_notify_audio).equals(preference.getKey())) {
 			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.pref_warning_audio), (String) newValue).commit();
 		} else if (getString(R.string.key_notify_flash).equals(preference.getKey())) {
