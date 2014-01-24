@@ -25,7 +25,7 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		addPreferencesFromResource(R.xml.setting_preference);
-		reStartService();
+		// reStartService();
 	}
 
 	@Override
@@ -66,21 +66,33 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 		Preference pref = (Preference) findPreference(getString(R.string.key_setting_support_me));
 		pref.setOnPreferenceClickListener(this);
 
-		cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_notify_audio));
-		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_audio), false));
-		cbPref.setOnPreferenceChangeListener(this);
-		cbPref.setEnabled(true);
+		String[] OptionString = getResources().getStringArray(R.array.warning_option_string);
+		String[] OptionValue = getResources().getStringArray(R.array.warning_option_value);
 
-		cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_notify_flash));
-		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_flash), false));
-		cbPref.setOnPreferenceChangeListener(this);
-		cbPref.setOnPreferenceClickListener(this);
+		listPref = (ListPreference) findPreference(getString(R.string.key_notify_audio));
+		for (int i = 0; i < OptionValue.length; i++) {
+			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_audio), "0").equalsIgnoreCase(OptionValue[i])) {
+				listPref.setSummary(OptionString[i]);
+				break;
+			}
+		}
+		listPref.setOnPreferenceChangeListener(this);
+		listPref.setEnabled(true);
+
+		listPref = (ListPreference) findPreference(getString(R.string.key_notify_flash));
+		for (int i = 0; i < OptionValue.length; i++) {
+			String sss = getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_flash), "0");
+			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_flash), "0").equalsIgnoreCase(OptionValue[i])) {
+				listPref.setSummary(OptionString[i]);
+				break;
+			}
+		}
+		listPref.setOnPreferenceChangeListener(this);
 		if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
-			cbPref.setEnabled(true);
+			listPref.setEnabled(true);
 		} else {
-			cbPref.setChecked(false);
-			cbPref.setEnabled(false);
-			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.pref_warning_flash), false).commit();
+			listPref.setEnabled(false);
+			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.pref_warning_flash), "0").commit();
 		}
 
 		cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_notify_screen));
@@ -88,10 +100,20 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 		cbPref.setOnPreferenceChangeListener(this);
 		cbPref.setEnabled(true);
 
-		cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_notify_vibrate));
-		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_vibrator), false));
+		cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_notify_popwindow));
+		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_popwindow), false));
 		cbPref.setOnPreferenceChangeListener(this);
 		cbPref.setEnabled(true);
+
+		listPref = (ListPreference) findPreference(getString(R.string.key_notify_vibrate));
+		for (int i = 0; i < OptionValue.length; i++) {
+			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_vibrator), "0").equalsIgnoreCase(OptionValue[i])) {
+				listPref.setSummary(OptionString[i]);
+				break;
+			}
+		}
+		listPref.setOnPreferenceChangeListener(this);
+		listPref.setEnabled(true);
 	}
 
 	@Override
@@ -106,28 +128,32 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 					break;
 				}
 			}
-			reStartService();
+			// reStartService();
 		} else if (getString(R.string.key_setting_auto_start).equals(preference.getKey())) {
 			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.pref_setting_auto_start), (Boolean) newValue).commit();
-			reStartService();
+			// reStartService();
 		} else if (getString(R.string.key_notify_audio).equals(preference.getKey())) {
-			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.pref_warning_audio), (Boolean) newValue).commit();
+			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.pref_warning_audio), (String) newValue).commit();
 		} else if (getString(R.string.key_notify_flash).equals(preference.getKey())) {
-			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.pref_warning_flash), (Boolean) newValue).commit();
+			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.pref_warning_flash), (String) newValue).commit();
+		} else if (getString(R.string.key_notify_popwindow).equals(preference.getKey())) {
+			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.pref_warning_popwindow), (Boolean) newValue).commit();
 		} else if (getString(R.string.key_notify_screen).equals(preference.getKey())) {
 			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.pref_warning_screen), (Boolean) newValue).commit();
 		} else if (getString(R.string.key_notify_vibrate).equals(preference.getKey())) {
-			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.pref_warning_vibrator), (Boolean) newValue).commit();
+			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.pref_warning_vibrator), (String) newValue).commit();
 		}
-
+		SetDefaultData();
 		return true;
 	}
 
 	@Override
 	public boolean onPreferenceClick(Preference preference) {
-		if (getString(R.string.key_setting_support_me).equals(preference.getKey())) {
-
-		}
+		// if
+		// (getString(R.string.key_setting_support_me).equals(preference.getKey()))
+		// {
+		//
+		// }
 
 		return true;
 	}

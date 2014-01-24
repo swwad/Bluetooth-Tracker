@@ -22,18 +22,31 @@
         android:title="@string/warning_method" >
         <CheckBoxPreference
             android:defaultValue="false"
+            android:key="@string/key_notify_popwindow"
+            android:title="@string/warning_popwinodw" />
+
+        <ListPreference
+            android:defaultValue="0"
+            android:entries="@array/warning_option_string"
+            android:entryValues="@array/warning_option_value"
             android:key="@string/key_notify_audio"
             android:title="@string/warning_audio" />
-        <CheckBoxPreference
-            android:defaultValue="false"
+        <ListPreference
+            android:defaultValue="0"
+            android:entries="@array/warning_option_string"
+            android:entryValues="@array/warning_option_value"
             android:key="@string/key_notify_vibrate"
             android:title="@string/warning_vibrate" />
+
         <CheckBoxPreference
             android:defaultValue="false"
             android:key="@string/key_notify_screen"
             android:title="@string/warning_screen" />
-        <CheckBoxPreference
-            android:defaultValue="false"
+
+        <ListPreference
+            android:defaultValue="0"
+            android:entries="@array/warning_option_string"
+            android:entryValues="@array/warning_option_value"
             android:key="@string/key_notify_flash"
             android:title="@string/warning_flash" />
     </PreferenceCategory>

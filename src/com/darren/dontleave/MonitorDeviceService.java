@@ -1,12 +1,19 @@
 package com.darren.dontleave;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothHeadset;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.Camera;
@@ -14,13 +21,12 @@ import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Parameters;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.SystemClock;
 import android.os.Vibrator;
+import android.view.WindowManager;
 
 public class MonitorDeviceService extends Service {
 
@@ -28,6 +34,8 @@ public class MonitorDeviceService extends Service {
 	Camera camera;
 	Parameters camera_parameters;
 	int iBackCameraID = -1;
+	BluetoothHeadset btHeadset;
+	Set<BluetoothDevice> pairedDevices = new HashSet<BluetoothDevice>();
 
 	@Override
 	public void onCreate() {
@@ -56,7 +64,10 @@ public class MonitorDeviceService extends Service {
 		if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_setting_auto_start), false) || intent.getBooleanExtra(SettingActivity.StartFromActivity, false)) {
 			registerReceiver(brReceiver, new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED));
 			registerReceiver(brReceiver, new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED));
-			registerReceiver(brReceiver, new IntentFilter(BluetoothDevice.ACTION_ACL_CONNECTED));
+			// registerReceiver(brReceiver, new
+			// IntentFilter(BluetoothDevice.ACTION_ACL_CONNECTED));
+			// registerReceiver(brReceiver, new
+			// IntentFilter(BluetoothDevice.ACTION_FOUND));
 			showNotification();
 		} else {
 			stopSelf();
@@ -64,22 +75,29 @@ public class MonitorDeviceService extends Service {
 		return super.onStartCommand(intent, flags, startId);
 	}
 
-	Handler hFindDevice = new Handler() {
-		@Override
-		public void handleMessage(Message msg) {
-			if (android.os.Build.VERSION.SDK_INT < 11) {
-
-				super.handleMessage(msg);
-			}
-		}
-	};
+	// Handler hFindDevice = new Handler() {
+	// @Override
+	// public void handleMessage(Message msg) {
+	// super.handleMessage(msg);
+	// pairedDevices = BluetoothAdapter.getDefaultAdapter().getBondedDevices();
+	// for (BluetoothDevice device : pairedDevices) {
+	// if (getSharedPreferences(getPackageName(),
+	// MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address),
+	// "").equalsIgnoreCase(device.getAddress())) {
+	// btHeadset.startVoiceRecognition(device);
+	// break;
+	// }
+	// }
+	// hFindDevice.sendMessageDelayed(new Message().obtain(), 15000);
+	// }
+	// };
 
 	private final BroadcastReceiver brReceiver = new BroadcastReceiver() {
 
 		@Override
 		public void onReceive(Context context, Intent intent) {
+			BluetoothDevice bdDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 			if ((BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(intent.getAction())) || (BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED.equals(intent.getAction()))) {
-				BluetoothDevice bdDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 				if (bdDevice.getAddress().equalsIgnoreCase(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address), ""))) {
 					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_audio), false)) {
 						warningAudio();
@@ -93,14 +111,37 @@ public class MonitorDeviceService extends Service {
 					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_vibrator), false)) {
 						warningVibrator();
 					}
-				}
-				hFindDevice.sendEmptyMessage(0);
-			} else if ((BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(intent.getAction())) || (BluetoothDevice.ACTION_ACL_CONNECTED.equals(intent.getAction()))) {
-				BluetoothDevice bdDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-				if (bdDevice.getAddress().equalsIgnoreCase(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address), ""))) {
-					hFindDevice.removeCallbacksAndMessages(null);
+
+					AlertDialog.Builder builder = new AlertDialog.Builder(MonitorDeviceService.this);
+					builder.setTitle("提示");
+					builder.setMessage("該下車了");
+					builder.setNegativeButton("取消", new OnClickListener() {
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+
+						}
+					});
+					builder.setPositiveButton("確定", new OnClickListener() {
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+
+						}
+					});
+					final AlertDialog dialog = builder.create();
+					dialog.getWindow().setType((WindowManager.LayoutParams.TYPE_SYSTEM_ALERT));
+					dialog.show();
 				}
 			}
+			// else if
+			// (BluetoothDevice.ACTION_ACL_CONNECTED.equals(intent.getAction()))
+			// {
+			// if
+			// (bdDevice.getAddress().equalsIgnoreCase(getSharedPreferences(getPackageName(),
+			// MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address),
+			// ""))) {
+			// hFindDevice.removeCallbacksAndMessages(null);
+			// }
+			// }
 		}
 	};
 
@@ -113,8 +154,16 @@ public class MonitorDeviceService extends Service {
 		}
 	}
 
-	public void warningVibrator() {
-		((Vibrator) getApplication().getSystemService(Service.VIBRATOR_SERVICE)).vibrate(10000);
+	public void warningVibrator(final int iSec) {
+		new Thread() {
+			public void run() {
+				synchronized (this) {
+					for (int i = 0; i < iSec; i++) {
+						((Vibrator) getApplication().getSystemService(Service.VIBRATOR_SERVICE)).vibrate(1000);
+					}
+				}
+			}
+		}.start();
 	}
 
 	public void warningScreen() {
@@ -129,7 +178,7 @@ public class MonitorDeviceService extends Service {
 		}.start();
 	}
 
-	public void warningFlash() {
+	public void warningFlash(final int iSec) {
 		new Thread() {
 			public void run() {
 				synchronized (this) {
@@ -137,7 +186,7 @@ public class MonitorDeviceService extends Service {
 						camera = Camera.open(iBackCameraID);
 						camera_parameters = camera.getParameters();
 
-						for (int i = 0; i < 10; i++) {
+						for (int i = 0; i < iSec; i++) {
 							camera_parameters.setFlashMode(Parameters.FLASH_MODE_TORCH);
 							camera.setParameters(camera_parameters);
 							SystemClock.sleep(500);
@@ -165,7 +214,7 @@ public class MonitorDeviceService extends Service {
 
 	private void showNotification() {
 		Notification notification = new Notification(R.drawable.ic_launcher, getString(R.string.run_in_service), System.currentTimeMillis());
-		notification.flags = Notification.FLAG_NO_CLEAR;
+		// notification.flags = Notification.FLAG_NO_CLEAR;
 		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, MonitorDeviceService.class), 0);
 		notification.setLatestEventInfo(this, getString(R.string.run_in_service),
 				getString(R.string.connecting_device) + getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_name), ""), contentIntent);
