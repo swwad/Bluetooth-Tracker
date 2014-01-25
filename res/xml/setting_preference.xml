@@ -10,18 +10,21 @@
 
         <CheckBoxPreference
             android:defaultValue="false"
+            android:enabled="false"
             android:key="@string/key_setting_auto_start"
             android:title="@string/auto_start" />
-
+        <!--
         <Preference
             android:key="@string/key_setting_support_me"
             android:title="@string/support_me" />
+        -->
     </PreferenceCategory>
     <PreferenceCategory
         android:key="@string/key_notify_title"
         android:title="@string/warning_method" >
         <CheckBoxPreference
             android:defaultValue="false"
+            android:enabled="false"
             android:key="@string/key_notify_popwindow"
             android:title="@string/warning_popwinodw" />
 
@@ -40,11 +43,13 @@
 
         <CheckBoxPreference
             android:defaultValue="false"
+            android:enabled="false"
             android:key="@string/key_notify_screen"
             android:title="@string/warning_screen" />
 
         <ListPreference
             android:defaultValue="0"
+            android:enabled="false"
             android:entries="@array/warning_option_string"
             android:entryValues="@array/warning_option_value"
             android:key="@string/key_notify_flash"

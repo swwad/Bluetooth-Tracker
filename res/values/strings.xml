@@ -2,11 +2,11 @@
 <resources>
 
     <!-- Language -->
-    <string name="app_name">藍芽防丟器</string>
-    <string name="run_in_service">藍芽防丟器啟動</string>
+    <string name="app_name">藍牙防丟器</string>
+    <string name="run_in_service">藍牙防丟器啟動</string>
     <string name="connecting_device">目前防丟裝置:</string>
-    <string name="warning_text">本程式可在藍芽裝置離開手機連線範圍時發出警示，\n但實際使用情況仍依手機或裝置穩定度為主，\n\n使用者若因使用本程式造成之損失，開發者不承擔任何責任，\n開始使用本系統視為同意以上聲明事項。</string>
-    <string name="warning_no_btdevice">請先選擇欲偵測的藍芽裝置。</string>
+    <string name="warning_text">本程式可在藍牙裝置離開手機連線範圍時發出警示，\n但實際使用情況仍依手機或裝置穩定度為主，\n\n使用者若因使用本程式造成之損失，開發者不承擔任何責任，\n開始使用本系統視為同意以上聲明事項。</string>
+    <string name="warning_no_btdevice">請先選擇欲偵測的藍牙裝置。</string>
     <string name="warning_method">警示方式</string>
     <string name="warning_flash">相機閃光燈閃爍</string>
     <string name="warning_screen">螢幕亮起</string>
@@ -15,7 +15,7 @@
     <string name="warning_popwinodw">對話框提示</string>
     <string name="warning_dialog">警告!\n%s 離開連線範圍，請立刻確認。</string>
     <string name="action_settings">連接裝置設定</string>
-    <string name="select_btdevice">選取藍芽設備</string>
+    <string name="select_btdevice">選取藍牙設備</string>
     <string name="auto_start">開機自動啟動</string>
     <string name="support_me">支持本程式</string>
     <string name="support_me_text">您的支持可以幫助小弟開發更多新程式，\n購買後將可啟動此功能。</string>

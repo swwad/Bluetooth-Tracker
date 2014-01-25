@@ -1,4 +1,4 @@
-package com.darren.dontleave;
+package com.monster.dontleave;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
