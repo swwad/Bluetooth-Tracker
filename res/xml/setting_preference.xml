@@ -13,11 +13,9 @@
             android:enabled="false"
             android:key="@string/key_setting_auto_start"
             android:title="@string/auto_start" />
-        <!--
-        <Preference
+        <Preference
             android:key="@string/key_setting_support_me"
             android:title="@string/support_me" />
-        -->
     </PreferenceCategory>
     <PreferenceCategory
         android:key="@string/key_notify_title"

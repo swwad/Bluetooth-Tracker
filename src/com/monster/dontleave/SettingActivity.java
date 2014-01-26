@@ -6,6 +6,7 @@ import java.util.Set;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
@@ -15,13 +16,19 @@ import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.widget.Toast;
 
+import com.util.IabHelper;
+import com.util.IabResult;
+
+//http://www.icoding.co/2012/12/android-in-app-billing-version-3
+
 public class SettingActivity extends PreferenceActivity implements OnPreferenceChangeListener, OnPreferenceClickListener {
 
 	Set<BluetoothDevice> pairedDevices = new HashSet<BluetoothDevice>();
 	public final static String StartFromActivity = "StartFromActivity";
 
-	// String IABKey =
-	// "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAutzaL2p34g8tkLuySwac0dUT30sR5s61nhI02VITWJSdxZ3y4P6NW1vb8d9a+6dfZYpzYQPkebKVwlvJYFG7xwPeHcqyqCNc5EWa3hPaVbPHfeUrM/AI/pe/Go1LeniZpt27M0A7rUckEDryI+W5Eqp1d9+b0ie3L2aUzKKEKQGa+RDPGfXlVD7zuPuIyZZtgwzu2IDz8SZkBGTYQnbZe4vVetw0o/Vz7g4b3XPeGEYxYlpyj3K5yT93u2T2iUKfdRBHapx3p23xWrA0Ojh+GCBHAn0Jr/X83BqtnPGssrIdUHsZdo5KokQbieqOm6OCfgCulqejbqdGqKsECqj0qQIDAQAB";
+	String IABKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAutzaL2p34g8tkLuySwac0dUT30sR5s61nhI02VITWJSdxZ3y4P6NW1vb8d9a+6dfZYpzYQPkebKVwlvJYFG7xwPeHcqyqCNc5EWa3hPaVbPHfeUrM/AI/pe/Go1LeniZpt27M0A7rUckEDryI+W5Eqp1d9+b0ie3L2aUzKKEKQGa+RDPGfXlVD7zuPuIyZZtgwzu2IDz8SZkBGTYQnbZe4vVetw0o/Vz7g4b3XPeGEYxYlpyj3K5yT93u2T2iUKfdRBHapx3p23xWrA0Ojh+GCBHAn0Jr/X83BqtnPGssrIdUHsZdo5KokQbieqOm6OCfgCulqejbqdGqKsECqj0qQIDAQAB";
+
+	IabHelper mHelper;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -60,14 +67,13 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 			listPref.setEnabled(false);
 		}
 
-		CheckBoxPreference cbPref;
-//		= (CheckBoxPreference) findPreference(getString(R.string.key_setting_auto_start));
-//		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_setting_auto_start), false));
-//		cbPref.setOnPreferenceChangeListener(this);
-//		cbPref.setEnabled(true);
+		CheckBoxPreference cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_setting_auto_start));
+		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_setting_auto_start), false));
+		cbPref.setOnPreferenceChangeListener(this);
+		cbPref.setEnabled(true);
 
-//		Preference pref = (Preference) findPreference(getString(R.string.key_setting_support_me));
-//		pref.setOnPreferenceClickListener(this);
+		Preference pref = (Preference) findPreference(getString(R.string.key_setting_support_me));
+		pref.setOnPreferenceClickListener(this);
 
 		String[] OptionString = getResources().getStringArray(R.array.warning_option_string);
 		String[] OptionValue = getResources().getStringArray(R.array.warning_option_value);
@@ -81,7 +87,7 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 		}
 		listPref.setOnPreferenceChangeListener(this);
 		listPref.setEnabled(true);
-		
+
 		listPref = (ListPreference) findPreference(getString(R.string.key_notify_vibrate));
 		for (int i = 0; i < OptionValue.length; i++) {
 			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_vibrator), "0").equalsIgnoreCase(OptionValue[i])) {
@@ -92,32 +98,31 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 		listPref.setOnPreferenceChangeListener(this);
 		listPref.setEnabled(true);
 
-//		listPref = (ListPreference) findPreference(getString(R.string.key_notify_flash));
-//		for (int i = 0; i < OptionValue.length; i++) {
-//			String sss = getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_flash), "0");
-//			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_flash), "0").equalsIgnoreCase(OptionValue[i])) {
-//				listPref.setSummary(OptionString[i]);
-//				break;
-//			}
-//		}
-//		listPref.setOnPreferenceChangeListener(this);
-//		if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
-//			listPref.setEnabled(true);
-//		} else {
-//			listPref.setEnabled(false);
-//			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.pref_warning_flash), "0").commit();
-//		}
+		listPref = (ListPreference) findPreference(getString(R.string.key_notify_flash));
+		for (int i = 0; i < OptionValue.length; i++) {
+			String sss = getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_flash), "0");
+			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_flash), "0").equalsIgnoreCase(OptionValue[i])) {
+				listPref.setSummary(OptionString[i]);
+				break;
+			}
+		}
+		listPref.setOnPreferenceChangeListener(this);
+		if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
+			listPref.setEnabled(true);
+		} else {
+			listPref.setEnabled(false);
+			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.pref_warning_flash), "0").commit();
+		}
 
-//		cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_notify_screen));
-//		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_screen), false));
-//		cbPref.setOnPreferenceChangeListener(this);
-//		cbPref.setEnabled(true);
+		cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_notify_screen));
+		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_screen), false));
+		cbPref.setOnPreferenceChangeListener(this);
+		cbPref.setEnabled(true);
 
-//		cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_notify_popwindow));
-//		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_popwindow), false));
-//		cbPref.setOnPreferenceChangeListener(this);
-//		cbPref.setEnabled(true);
-
+		cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_notify_popwindow));
+		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_popwindow), false));
+		cbPref.setOnPreferenceChangeListener(this);
+		cbPref.setEnabled(true);
 
 	}
 
@@ -154,12 +159,31 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 
 	@Override
 	public boolean onPreferenceClick(Preference preference) {
-		// if
-		// (getString(R.string.key_setting_support_me).equals(preference.getKey()))
-		// {
-		//
-		// }
+		if (getString(R.string.key_setting_support_me).equals(preference.getKey())) {
+			mHelper = new IabHelper(this, IABKey);
+			mHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
 
+				public void onIabSetupFinished(IabResult result) {
+
+					if (!result.isSuccess()) {
+
+						// 建立連線發生錯誤，這時可以秀出訊息給使用者知道之後無法購買。
+						int x = 0;
+						x++;
+
+					}
+
+					// 連線建立成功，這時可以開始做其它事，例如尋問產品資訊或使用者購買情形
+					int y = 0;
+					y++;
+					if (mHelper != null)
+						mHelper.dispose();
+					mHelper = null;
+
+				}
+
+			});
+		}
 		return true;
 	}
 

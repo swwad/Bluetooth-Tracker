@@ -3,6 +3,7 @@ package com.monster.dontleave;
 import java.util.HashSet;
 import java.util.Set;
 
+import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -10,6 +11,8 @@ import android.app.Service;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.hardware.Camera;
@@ -18,7 +21,11 @@ import android.hardware.Camera.Parameters;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.IBinder;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
+import android.os.SystemClock;
 import android.os.Vibrator;
+import android.view.WindowManager;
 
 public class MonitorDeviceService extends Service {
 
@@ -94,14 +101,14 @@ public class MonitorDeviceService extends Service {
 				if (bdDevice.getAddress().equalsIgnoreCase(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address), ""))) {
 
 					warningAudio(Integer.valueOf(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_audio), "0")));
-//					warningFlash(Integer.valueOf(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_flash), "0")));
+					warningFlash(Integer.valueOf(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_flash), "0")));
 					warningVibrator(Integer.valueOf(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_vibrator), "0")));
-//					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_screen), false)) {
-//						warningScreen();
-//					}
-//					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_popwindow), false)) {
-//						warningDialog();
-//					}
+					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_screen), false)) {
+						warningScreen();
+					}
+					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_popwindow), false)) {
+						warningDialog();
+					}
 				}
 			}
 			// else if
@@ -126,24 +133,24 @@ public class MonitorDeviceService extends Service {
 		}
 	}
 
-//	public void warningDialog() {
-//		Intent dialogIntent = new Intent(getBaseContext(), SettingActivity.class);
-//		dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//		getApplication().startActivity(dialogIntent);
-//
-//		AlertDialog.Builder builder = new AlertDialog.Builder(MonitorDeviceService.this);
-//		builder.setTitle(R.string.app_name);
-//		builder.setMessage(String.format(getString(R.string.warning_dialog), getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_name), "")));
-//		builder.setPositiveButton(R.string.option_ok, new OnClickListener() {
-//			@Override
-//			public void onClick(DialogInterface dialog, int which) {
-//				bStopAllWarning = true;
-//			}
-//		});
-//		final AlertDialog dialog = builder.create();
-//		dialog.getWindow().setType((WindowManager.LayoutParams.TYPE_SYSTEM_ALERT));
-//		dialog.show();
-//	}
+	public void warningDialog() {
+		Intent dialogIntent = new Intent(getBaseContext(), SettingActivity.class);
+		dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		getApplication().startActivity(dialogIntent);
+
+		AlertDialog.Builder builder = new AlertDialog.Builder(MonitorDeviceService.this);
+		builder.setTitle(R.string.app_name);
+		builder.setMessage(String.format(getString(R.string.warning_dialog), getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_name), "")));
+		builder.setPositiveButton(R.string.option_ok, new OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				bStopAllWarning = true;
+			}
+		});
+		final AlertDialog dialog = builder.create();
+		dialog.getWindow().setType((WindowManager.LayoutParams.TYPE_SYSTEM_ALERT));
+		dialog.show();
+	}
 
 	public void warningVibrator(final int iSec) {
 		new Thread() {
@@ -163,41 +170,41 @@ public class MonitorDeviceService extends Service {
 		}.start();
 	}
 
-//	public void warningScreen() {
-//		new Thread() {
-//			public void run() {
-//				synchronized (this) {
-//					PowerManager pm = (PowerManager) getApplicationContext().getSystemService(Context.POWER_SERVICE);
-//					WakeLock wakeLock = pm.newWakeLock((PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP), "TAG");
-//					wakeLock.acquire();
-//				}
-//			}
-//		}.start();
-//	}
+	public void warningScreen() {
+		new Thread() {
+			public void run() {
+				synchronized (this) {
+					PowerManager pm = (PowerManager) getApplicationContext().getSystemService(Context.POWER_SERVICE);
+					WakeLock wakeLock = pm.newWakeLock((PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP), "TAG");
+					wakeLock.acquire();
+				}
+			}
+		}.start();
+	}
 
-//	public void warningFlash(final int iSec) {
-//		camera = Camera.open(iBackCameraID);
-//		camera_parameters = camera.getParameters();
-//		new Thread() {
-//			public void run() {
-//				synchronized (this) {
-//					if (iBackCameraID != -1) {
-//						for (int i = 0; i < iSec; i++) {
-//							if (bStopAllWarning) break;
-//							camera_parameters.setFlashMode(Parameters.FLASH_MODE_TORCH);
-//							camera.setParameters(camera_parameters);
-//							SystemClock.sleep(500);
-//							camera_parameters.setFlashMode(Parameters.FLASH_MODE_OFF);
-//							camera.setParameters(camera_parameters);
-//							SystemClock.sleep(500);
-//						}
-//						camera.stopPreview();
-//						camera.release();
-//					}
-//				}
-//			}
-//		}.start();
-//	}
+	public void warningFlash(final int iSec) {
+		camera = Camera.open(iBackCameraID);
+		camera_parameters = camera.getParameters();
+		new Thread() {
+			public void run() {
+				synchronized (this) {
+					if (iBackCameraID != -1) {
+						for (int i = 0; i < iSec; i++) {
+							if (bStopAllWarning) break;
+							camera_parameters.setFlashMode(Parameters.FLASH_MODE_TORCH);
+							camera.setParameters(camera_parameters);
+							SystemClock.sleep(500);
+							camera_parameters.setFlashMode(Parameters.FLASH_MODE_OFF);
+							camera.setParameters(camera_parameters);
+							SystemClock.sleep(500);
+						}
+						camera.stopPreview();
+						camera.release();
+					}
+				}
+			}
+		}.start();
+	}
 
 	public void warningAudio(final int iSec) {
 		AudioManager audioManager = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
