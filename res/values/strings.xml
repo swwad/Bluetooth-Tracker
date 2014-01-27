@@ -22,6 +22,7 @@
     <string name="option_on">開啟</string>
     <string name="option_off">關閉</string>
     <string name="option_ok">我知道了</string>
+    <string name="iabhelper_failed">查詢購買資訊失敗，請稍後在試!</string>
 
     <string-array name="warning_option_string">
         <item>關閉</item>

@@ -1,5 +1,6 @@
 package com.monster.dontleave;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -17,7 +18,9 @@ import android.preference.PreferenceActivity;
 import android.widget.Toast;
 
 import com.util.IabHelper;
+import com.util.IabHelper.OnIabPurchaseFinishedListener;
 import com.util.IabResult;
+import com.util.Purchase;
 
 //http://www.icoding.co/2012/12/android-in-app-billing-version-3
 
@@ -26,8 +29,11 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 	Set<BluetoothDevice> pairedDevices = new HashSet<BluetoothDevice>();
 	public final static String StartFromActivity = "StartFromActivity";
 
-	String IABKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAutzaL2p34g8tkLuySwac0dUT30sR5s61nhI02VITWJSdxZ3y4P6NW1vb8d9a+6dfZYpzYQPkebKVwlvJYFG7xwPeHcqyqCNc5EWa3hPaVbPHfeUrM/AI/pe/Go1LeniZpt27M0A7rUckEDryI+W5Eqp1d9+b0ie3L2aUzKKEKQGa+RDPGfXlVD7zuPuIyZZtgwzu2IDz8SZkBGTYQnbZe4vVetw0o/Vz7g4b3XPeGEYxYlpyj3K5yT93u2T2iUKfdRBHapx3p23xWrA0Ojh+GCBHAn0Jr/X83BqtnPGssrIdUHsZdo5KokQbieqOm6OCfgCulqejbqdGqKsECqj0qQIDAQAB";
+	ArrayList<String> BuyProveList = new ArrayList<String>();
 
+	final static int BuyFullVersionRequestCode = 721010;
+	String IABKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAutzaL2p34g8tkLuySwac0dUT30sR5s61nhI02VITWJSdxZ3y4P6NW1vb8d9a+6dfZYpzYQPkebKVwlvJYFG7xwPeHcqyqCNc5EWa3hPaVbPHfeUrM/AI/pe/Go1LeniZpt27M0A7rUckEDryI+W5Eqp1d9+b0ie3L2aUzKKEKQGa+RDPGfXlVD7zuPuIyZZtgwzu2IDz8SZkBGTYQnbZe4vVetw0o/Vz7g4b3XPeGEYxYlpyj3K5yT93u2T2iUKfdRBHapx3p23xWrA0Ojh+GCBHAn0Jr/X83BqtnPGssrIdUHsZdo5KokQbieqOm6OCfgCulqejbqdGqKsECqj0qQIDAQAB";
+	String FullVersionID = "dontleave.full.version";
 	IabHelper mHelper;
 
 	@Override
@@ -70,7 +76,7 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 		CheckBoxPreference cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_setting_auto_start));
 		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_setting_auto_start), false));
 		cbPref.setOnPreferenceChangeListener(this);
-		cbPref.setEnabled(true);
+		cbPref.setEnabled(false);
 
 		Preference pref = (Preference) findPreference(getString(R.string.key_setting_support_me));
 		pref.setOnPreferenceClickListener(this);
@@ -108,7 +114,7 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 		}
 		listPref.setOnPreferenceChangeListener(this);
 		if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
-			listPref.setEnabled(true);
+			listPref.setEnabled(false);
 		} else {
 			listPref.setEnabled(false);
 			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.pref_warning_flash), "0").commit();
@@ -117,12 +123,12 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 		cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_notify_screen));
 		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_screen), false));
 		cbPref.setOnPreferenceChangeListener(this);
-		cbPref.setEnabled(true);
+		cbPref.setEnabled(false);
 
 		cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_notify_popwindow));
 		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_popwindow), false));
 		cbPref.setOnPreferenceChangeListener(this);
-		cbPref.setEnabled(true);
+		cbPref.setEnabled(false);
 
 	}
 
@@ -160,31 +166,81 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 	@Override
 	public boolean onPreferenceClick(Preference preference) {
 		if (getString(R.string.key_setting_support_me).equals(preference.getKey())) {
+
 			mHelper = new IabHelper(this, IABKey);
+
+			BuyProveList.clear();
+			BuyProveList.add(FullVersionID);
 			mHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
-
 				public void onIabSetupFinished(IabResult result) {
-
 					if (!result.isSuccess()) {
+						Toast.makeText(SettingActivity.this, R.string.iabhelper_failed, Toast.LENGTH_SHORT).show();
+						releaseIabHelper(mHelper);
+					} else {
+						mHelper.launchPurchaseFlow(SettingActivity.this, FullVersionID, BuyFullVersionRequestCode, new OnIabPurchaseFinishedListener() {
 
-						// 建立連線發生錯誤，這時可以秀出訊息給使用者知道之後無法購買。
-						int x = 0;
-						x++;
+							@Override
+							public void onIabPurchaseFinished(IabResult result, Purchase info) {
+								if (result.isFailure()) {
+									int x = 0;
+									x++;
 
+								} else if (info.getSku().equals(FullVersionID)) {
+									int x = 0;
+									x++;
+
+								}
+
+							}
+						}, "FullVersionID123456789");
+						/*
+						 * // Toast.makeText(SettingActivity.this,
+						 * "IabHelper OK", // Toast.LENGTH_SHORT).show();
+						 * mHelper.queryInventoryAsync(false, BuyProveList, new
+						 * QueryInventoryFinishedListener() {
+						 * 
+						 * @Override public void
+						 * onQueryInventoryFinished(IabResult result, Inventory
+						 * inv) { if (result.isFailure()) {
+						 * Toast.makeText(SettingActivity.this,
+						 * R.string.iabhelper_failed,
+						 * Toast.LENGTH_SHORT).show();
+						 * releaseIabHelper(mHelper); } else { int x = 0; x++; }
+						 * } });
+						 */
 					}
-
-					// 連線建立成功，這時可以開始做其它事，例如尋問產品資訊或使用者購買情形
-					int y = 0;
-					y++;
-					if (mHelper != null)
-						mHelper.dispose();
-					mHelper = null;
-
 				}
-
 			});
 		}
 		return true;
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		if (requestCode == BuyFullVersionRequestCode) {
+			if (resultCode == RESULT_OK) {
+				Toast.makeText(SettingActivity.this, "resultCode OK", Toast.LENGTH_SHORT).show();
+			} else {
+				Toast.makeText(SettingActivity.this, "resultCode = " + String.valueOf(resultCode), Toast.LENGTH_SHORT).show();
+			}
+		} else {
+			Toast.makeText(SettingActivity.this, "requestCode = " + String.valueOf(requestCode), Toast.LENGTH_SHORT).show();
+		}
+	}
+
+	private void releaseIabHelper(IabHelper helper) {
+		if (helper != null)
+			helper.dispose();
+		helper = null;
+	}
+
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		if (mHelper != null)
+			mHelper.dispose();
+		mHelper = null;
 	}
 
 	public void reStartService() {
