@@ -83,7 +83,6 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 				} else {
 					listPref.setEnabled(false);
 					hCheckBtDeviceStatus.sendMessageDelayed(new Message().obtain(), 500);
-
 				}
 			}
 
@@ -91,28 +90,8 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 	};
 
 	void SetDefaultData() {
-		ListPreference listPref;
-//		= (ListPreference) findPreference(getString(R.string.key_setting_select_btdevice));
-//		if (BluetoothAdapter.getDefaultAdapter() != null) {
-//			pairedDevices = BluetoothAdapter.getDefaultAdapter().getBondedDevices();
-//			listPref.setSummary("");
-//			String[] entryDeviceValues = new String[pairedDevices.size()];
-//			String[] entryDevice = new String[pairedDevices.size()];
-//			int i = 0;
-//			for (BluetoothDevice device : pairedDevices) {
-//				entryDeviceValues[i] = device.getAddress();
-//				entryDevice[i] = device.getName();
-//				if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address), "").equalsIgnoreCase(device.getAddress()))
-//					listPref.setSummary(device.getName());
-//				i++;
-//			}
-//			listPref.setEntries(entryDevice);
-//			listPref.setEntryValues(entryDeviceValues);
-//			listPref.setOnPreferenceChangeListener(this);
-//			listPref.setEnabled(true);
-//		} else {
-//			listPref.setEnabled(false);
-//		}
+		String[] OptionString = getResources().getStringArray(R.array.warning_option_string);
+		String[] OptionValue = getResources().getStringArray(R.array.warning_option_value);
 
 		CheckBoxPreference cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_setting_auto_start));
 		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_setting_auto_start), false));
@@ -127,10 +106,7 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 			pref.setOnPreferenceClickListener(this);
 		}
 
-		String[] OptionString = getResources().getStringArray(R.array.warning_option_string);
-		String[] OptionValue = getResources().getStringArray(R.array.warning_option_value);
-
-		listPref = (ListPreference) findPreference(getString(R.string.key_notify_audio));
+		ListPreference listPref = (ListPreference) findPreference(getString(R.string.key_notify_audio));
 		for (int i = 0; i < OptionValue.length; i++) {
 			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_audio), "0").equalsIgnoreCase(OptionValue[i])) {
 				listPref.setSummary(OptionString[i]);
@@ -211,6 +187,8 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 	@Override
 	public boolean onPreferenceClick(Preference preference) {
 		if (getString(R.string.key_setting_support_me).equals(preference.getKey())) {
+			releaseIabHelper();
+
 			if (mHelper == null)
 				mHelper = new IabHelper(this, IABKey);
 			BuyProveList.clear();
@@ -233,9 +211,12 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 										getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_full_version), false).commit();
 										Toast.makeText(SettingActivity.this, result.getMessage(), Toast.LENGTH_SHORT).show();
 									}
-								} else if (info.getSku().equals(FullVersionID)) {
+								} else if ((result.isSuccess()) && (info.getSku().equals(FullVersionID))) {
 									getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_full_version), true).commit();
 									Toast.makeText(SettingActivity.this, R.string.iabhelper_fullversion, Toast.LENGTH_LONG).show();
+								} else {
+									getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_full_version), false).commit();
+									Toast.makeText(SettingActivity.this, result.getMessage(), Toast.LENGTH_SHORT).show();
 								}
 								releaseIabHelper();
 								SetDefaultData();
@@ -245,6 +226,12 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 				}
 			});
 		}
+//		else if ((getString(R.string.key_setting_auto_start).equals(preference.getKey())) || (getString(R.string.key_notify_popwindow).equals(preference.getKey()))
+//				|| (getString(R.string.key_notify_flash).equals(preference.getKey())) || (getString(R.string.key_notify_screen).equals(preference.getKey()))) {
+//			if (!getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_full_version), false)) {
+//				Toast.makeText(SettingActivity.this, R.string.support_me_text, Toast.LENGTH_LONG).show();
+//			}
+//		}
 		return true;
 	}
 
