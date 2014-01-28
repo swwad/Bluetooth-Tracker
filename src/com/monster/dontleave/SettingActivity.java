@@ -9,12 +9,15 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceGroup;
 import android.widget.Toast;
 
 import com.util.IabHelper;
@@ -32,15 +35,19 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 	ArrayList<String> BuyProveList = new ArrayList<String>();
 
 	final static int BuyFullVersionRequestCode = 721010;
-	String IABKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAutzaL2p34g8tkLuySwac0dUT30sR5s61nhI02VITWJSdxZ3y4P6NW1vb8d9a+6dfZYpzYQPkebKVwlvJYFG7xwPeHcqyqCNc5EWa3hPaVbPHfeUrM/AI/pe/Go1LeniZpt27M0A7rUckEDryI+W5Eqp1d9+b0ie3L2aUzKKEKQGa+RDPGfXlVD7zuPuIyZZtgwzu2IDz8SZkBGTYQnbZe4vVetw0o/Vz7g4b3XPeGEYxYlpyj3K5yT93u2T2iUKfdRBHapx3p23xWrA0Ojh+GCBHAn0Jr/X83BqtnPGssrIdUHsZdo5KokQbieqOm6OCfgCulqejbqdGqKsECqj0qQIDAQAB";
-	String FullVersionID = "dontleave.full.version";
+	final static String IABRequestCode = "FullVersionID123456789";
+	final static String IABKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAutzaL2p34g8tkLuySwac0dUT30sR5s61nhI02VITWJSdxZ3y4P6NW1vb8d9a+6dfZYpzYQPkebKVwlvJYFG7xwPeHcqyqCNc5EWa3hPaVbPHfeUrM/AI/pe/Go1LeniZpt27M0A7rUckEDryI+W5Eqp1d9+b0ie3L2aUzKKEKQGa+RDPGfXlVD7zuPuIyZZtgwzu2IDz8SZkBGTYQnbZe4vVetw0o/Vz7g4b3XPeGEYxYlpyj3K5yT93u2T2iUKfdRBHapx3p23xWrA0Ojh+GCBHAn0Jr/X83BqtnPGssrIdUHsZdo5KokQbieqOm6OCfgCulqejbqdGqKsECqj0qQIDAQAB";
+	final static String FullVersionID = "dontleave.full.version";
+
 	IabHelper mHelper;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		BluetoothAdapter.getDefaultAdapter().enable();
 		addPreferencesFromResource(R.xml.setting_preference);
 		reStartService();
+		hCheckBtDeviceStatus.sendEmptyMessage(0);
 	}
 
 	@Override
@@ -49,37 +56,76 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 		SetDefaultData();
 	}
 
-	void SetDefaultData() {
-		ListPreference listPref = (ListPreference) findPreference(getString(R.string.key_setting_select_btdevice));
-		BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-		if (bluetoothAdapter != null) {
-			pairedDevices = bluetoothAdapter.getBondedDevices();
-			listPref.setSummary("");
-			String[] entryDeviceValues = new String[pairedDevices.size()];
-			String[] entryDevice = new String[pairedDevices.size()];
-			int i = 0;
-			for (BluetoothDevice device : pairedDevices) {
-				entryDeviceValues[i] = device.getAddress();
-				entryDevice[i] = device.getName();
-				if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address), "").equalsIgnoreCase(device.getAddress()))
-					listPref.setSummary(device.getName());
-				i++;
+	Handler hCheckBtDeviceStatus = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			super.handleMessage(msg);
+			if (BluetoothAdapter.getDefaultAdapter() != null) {
+				pairedDevices = BluetoothAdapter.getDefaultAdapter().getBondedDevices();
+				ListPreference listPref = (ListPreference) findPreference(getString(R.string.key_setting_select_btdevice));
+				if (pairedDevices.size() > 0) {
+					listPref.setSummary("");
+					String[] entryDeviceValues = new String[pairedDevices.size()];
+					String[] entryDevice = new String[pairedDevices.size()];
+					int i = 0;
+					for (BluetoothDevice device : pairedDevices) {
+						entryDeviceValues[i] = device.getAddress();
+						entryDevice[i] = device.getName();
+						if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address), "").equalsIgnoreCase(device.getAddress()))
+							listPref.setSummary(device.getName());
+						i++;
+					}
+					listPref.setEntries(entryDevice);
+					listPref.setEntryValues(entryDeviceValues);
+					listPref.setOnPreferenceChangeListener(SettingActivity.this);
+					listPref.setEnabled(true);
+					hCheckBtDeviceStatus.removeCallbacksAndMessages(null);
+				} else {
+					listPref.setEnabled(false);
+					hCheckBtDeviceStatus.sendMessageDelayed(new Message().obtain(), 500);
+
+				}
 			}
-			listPref.setOnPreferenceChangeListener(this);
-			listPref.setEntries(entryDevice);
-			listPref.setEntryValues(entryDeviceValues);
-			listPref.setEnabled(true);
-		} else {
-			listPref.setEnabled(false);
+
 		}
+	};
+
+	void SetDefaultData() {
+		ListPreference listPref;
+//		= (ListPreference) findPreference(getString(R.string.key_setting_select_btdevice));
+//		if (BluetoothAdapter.getDefaultAdapter() != null) {
+//			pairedDevices = BluetoothAdapter.getDefaultAdapter().getBondedDevices();
+//			listPref.setSummary("");
+//			String[] entryDeviceValues = new String[pairedDevices.size()];
+//			String[] entryDevice = new String[pairedDevices.size()];
+//			int i = 0;
+//			for (BluetoothDevice device : pairedDevices) {
+//				entryDeviceValues[i] = device.getAddress();
+//				entryDevice[i] = device.getName();
+//				if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address), "").equalsIgnoreCase(device.getAddress()))
+//					listPref.setSummary(device.getName());
+//				i++;
+//			}
+//			listPref.setEntries(entryDevice);
+//			listPref.setEntryValues(entryDeviceValues);
+//			listPref.setOnPreferenceChangeListener(this);
+//			listPref.setEnabled(true);
+//		} else {
+//			listPref.setEnabled(false);
+//		}
 
 		CheckBoxPreference cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_setting_auto_start));
 		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_setting_auto_start), false));
 		cbPref.setOnPreferenceChangeListener(this);
-		cbPref.setEnabled(false);
+		cbPref.setEnabled(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_full_version), false));
 
 		Preference pref = (Preference) findPreference(getString(R.string.key_setting_support_me));
-		pref.setOnPreferenceClickListener(this);
+		if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_full_version), false)) {
+			if (pref != null)
+				((PreferenceGroup) findPreference(getString(R.string.key_setting_title))).removePreference(pref);
+		} else {
+			pref.setOnPreferenceClickListener(this);
+		}
 
 		String[] OptionString = getResources().getStringArray(R.array.warning_option_string);
 		String[] OptionValue = getResources().getStringArray(R.array.warning_option_value);
@@ -114,7 +160,7 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 		}
 		listPref.setOnPreferenceChangeListener(this);
 		if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
-			listPref.setEnabled(false);
+			listPref.setEnabled(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_full_version), false));
 		} else {
 			listPref.setEnabled(false);
 			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.pref_warning_flash), "0").commit();
@@ -123,13 +169,12 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 		cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_notify_screen));
 		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_screen), false));
 		cbPref.setOnPreferenceChangeListener(this);
-		cbPref.setEnabled(false);
+		cbPref.setEnabled(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_full_version), false));
 
 		cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_notify_popwindow));
 		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_popwindow), false));
 		cbPref.setOnPreferenceChangeListener(this);
-		cbPref.setEnabled(false);
-
+		cbPref.setEnabled(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_full_version), false));
 	}
 
 	@Override
@@ -166,48 +211,36 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 	@Override
 	public boolean onPreferenceClick(Preference preference) {
 		if (getString(R.string.key_setting_support_me).equals(preference.getKey())) {
-
-			mHelper = new IabHelper(this, IABKey);
-
+			if (mHelper == null)
+				mHelper = new IabHelper(this, IABKey);
 			BuyProveList.clear();
 			BuyProveList.add(FullVersionID);
+
 			mHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
 				public void onIabSetupFinished(IabResult result) {
 					if (!result.isSuccess()) {
-						Toast.makeText(SettingActivity.this, R.string.iabhelper_failed, Toast.LENGTH_SHORT).show();
-						releaseIabHelper(mHelper);
+						Toast.makeText(SettingActivity.this, result.getMessage(), Toast.LENGTH_SHORT).show();
+						releaseIabHelper();
 					} else {
 						mHelper.launchPurchaseFlow(SettingActivity.this, FullVersionID, BuyFullVersionRequestCode, new OnIabPurchaseFinishedListener() {
-
 							@Override
 							public void onIabPurchaseFinished(IabResult result, Purchase info) {
 								if (result.isFailure()) {
-									int x = 0;
-									x++;
-
+									if (result.getResponse() == IabHelper.BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED) {
+										getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_full_version), true).commit();
+										Toast.makeText(SettingActivity.this, R.string.iabhelper_fullversion, Toast.LENGTH_LONG).show();
+									} else {
+										getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_full_version), false).commit();
+										Toast.makeText(SettingActivity.this, result.getMessage(), Toast.LENGTH_SHORT).show();
+									}
 								} else if (info.getSku().equals(FullVersionID)) {
-									int x = 0;
-									x++;
-
+									getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_full_version), true).commit();
+									Toast.makeText(SettingActivity.this, R.string.iabhelper_fullversion, Toast.LENGTH_LONG).show();
 								}
-
+								releaseIabHelper();
+								SetDefaultData();
 							}
-						}, "FullVersionID123456789");
-						/*
-						 * // Toast.makeText(SettingActivity.this,
-						 * "IabHelper OK", // Toast.LENGTH_SHORT).show();
-						 * mHelper.queryInventoryAsync(false, BuyProveList, new
-						 * QueryInventoryFinishedListener() {
-						 * 
-						 * @Override public void
-						 * onQueryInventoryFinished(IabResult result, Inventory
-						 * inv) { if (result.isFailure()) {
-						 * Toast.makeText(SettingActivity.this,
-						 * R.string.iabhelper_failed,
-						 * Toast.LENGTH_SHORT).show();
-						 * releaseIabHelper(mHelper); } else { int x = 0; x++; }
-						 * } });
-						 */
+						}, IABRequestCode);
 					}
 				}
 			});
@@ -215,24 +248,10 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 		return true;
 	}
 
-	@Override
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		super.onActivityResult(requestCode, resultCode, data);
-		if (requestCode == BuyFullVersionRequestCode) {
-			if (resultCode == RESULT_OK) {
-				Toast.makeText(SettingActivity.this, "resultCode OK", Toast.LENGTH_SHORT).show();
-			} else {
-				Toast.makeText(SettingActivity.this, "resultCode = " + String.valueOf(resultCode), Toast.LENGTH_SHORT).show();
-			}
-		} else {
-			Toast.makeText(SettingActivity.this, "requestCode = " + String.valueOf(requestCode), Toast.LENGTH_SHORT).show();
-		}
-	}
-
-	private void releaseIabHelper(IabHelper helper) {
-		if (helper != null)
-			helper.dispose();
-		helper = null;
+	private void releaseIabHelper() {
+		if (mHelper != null)
+			mHelper.dispose();
+		mHelper = null;
 	}
 
 	@Override

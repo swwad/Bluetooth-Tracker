@@ -6,7 +6,7 @@
         android:title="@string/action_settings" >
         <ListPreference
             android:key="@string/key_setting_select_btdevice"
-            android:title="@string/select_btdevice" />
+            android:title="@string/select_btdevice" android:enabled="false"/>
 
         <CheckBoxPreference
             android:defaultValue="false"
@@ -15,6 +15,7 @@
             android:title="@string/auto_start" />
         <Preference
             android:key="@string/key_setting_support_me"
+            android:summary="@string/support_me_hint"
             android:title="@string/support_me" />
     </PreferenceCategory>
     <PreferenceCategory

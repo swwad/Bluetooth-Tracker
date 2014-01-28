@@ -8,6 +8,7 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -50,6 +51,8 @@ public class MonitorDeviceService extends Service {
 		if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address), "").length() == 0) {
 			stopSelf();
 		}
+
+		BluetoothAdapter.getDefaultAdapter().enable();
 	}
 
 	@Override
@@ -74,22 +77,7 @@ public class MonitorDeviceService extends Service {
 		return super.onStartCommand(intent, flags, startId);
 	}
 
-	// Handler hFindDevice = new Handler() {
-	// @Override
-	// public void handleMessage(Message msg) {
-	// super.handleMessage(msg);
-	// pairedDevices = BluetoothAdapter.getDefaultAdapter().getBondedDevices();
-	// for (BluetoothDevice device : pairedDevices) {
-	// if (getSharedPreferences(getPackageName(),
-	// MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address),
-	// "").equalsIgnoreCase(device.getAddress())) {
-	// btHeadset.startVoiceRecognition(device);
-	// break;
-	// }
-	// }
-	// hFindDevice.sendMessageDelayed(new Message().obtain(), 15000);
-	// }
-	// };
+
 
 	private final BroadcastReceiver brReceiver = new BroadcastReceiver() {
 
@@ -157,7 +145,8 @@ public class MonitorDeviceService extends Service {
 			public void run() {
 				synchronized (this) {
 					for (int i = 0; i < iSec; i++) {
-						if (bStopAllWarning) break;
+						if (bStopAllWarning)
+							break;
 						((Vibrator) getApplication().getSystemService(Service.VIBRATOR_SERVICE)).vibrate(1000);
 						try {
 							Thread.sleep(1050);
@@ -190,7 +179,8 @@ public class MonitorDeviceService extends Service {
 				synchronized (this) {
 					if (iBackCameraID != -1) {
 						for (int i = 0; i < iSec; i++) {
-							if (bStopAllWarning) break;
+							if (bStopAllWarning)
+								break;
 							camera_parameters.setFlashMode(Parameters.FLASH_MODE_TORCH);
 							camera.setParameters(camera_parameters);
 							SystemClock.sleep(500);
@@ -217,7 +207,8 @@ public class MonitorDeviceService extends Service {
 			public void run() {
 				synchronized (this) {
 					for (int i = 0; i < iSec; i++) {
-						if (bStopAllWarning) break;
+						if (bStopAllWarning)
+							break;
 						playerSound.start();
 						try {
 							Thread.sleep(1100);

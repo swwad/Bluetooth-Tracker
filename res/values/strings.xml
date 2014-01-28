@@ -18,11 +18,13 @@
     <string name="select_btdevice">選取藍牙設備</string>
     <string name="auto_start">開機自動啟動</string>
     <string name="support_me">支持本程式</string>
+    <string name="support_me_hint">若您已購賣，請點此直接取回原交易資料</string>
     <string name="support_me_text">您的支持可以幫助小弟開發更多新程式，\n購買後將可啟動此功能。</string>
     <string name="option_on">開啟</string>
     <string name="option_off">關閉</string>
     <string name="option_ok">我知道了</string>
-    <string name="iabhelper_failed">查詢購買資訊失敗，請稍後在試!</string>
+    <string name="iabhelper_failed">查詢購買資訊失敗，請稍後再試!</string>
+    <string name="iabhelper_fullversion">感謝您的支持，將啟用所有功能。</string>
 
     <string-array name="warning_option_string">
         <item>關閉</item>
@@ -48,6 +50,7 @@
     <string name="key_notify_audio">key_notify_audio</string>
     <string name="key_notify_vibrate">key_notify_vibrate</string>
     <string name="key_notify_popwindow">key_notify_popwindow</string>
+    <string name="key_full_version">key_full_version</string>
 
     <!-- Share Preference -->
     <string name="pref_warning_text">pref_warning_text</string>
