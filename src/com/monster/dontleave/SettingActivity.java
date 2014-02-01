@@ -1,11 +1,11 @@
 package com.monster.dontleave;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -22,17 +22,15 @@ import android.widget.Toast;
 
 import com.util.IabHelper;
 import com.util.IabHelper.OnIabPurchaseFinishedListener;
+import com.util.IabHelper.QueryInventoryFinishedListener;
 import com.util.IabResult;
+import com.util.Inventory;
 import com.util.Purchase;
-
-//http://www.icoding.co/2012/12/android-in-app-billing-version-3
 
 public class SettingActivity extends PreferenceActivity implements OnPreferenceChangeListener, OnPreferenceClickListener {
 
 	Set<BluetoothDevice> pairedDevices = new HashSet<BluetoothDevice>();
 	public final static String StartFromActivity = "StartFromActivity";
-
-	ArrayList<String> BuyProveList = new ArrayList<String>();
 
 	final static int BuyFullVersionRequestCode = 721010;
 	final static String IABRequestCode = "FullVersionID123456789";
@@ -45,15 +43,46 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		BluetoothAdapter.getDefaultAdapter().enable();
+		hCheckBtDeviceStatus.sendEmptyMessage(0);
 		addPreferencesFromResource(R.xml.setting_preference);
 		reStartService();
-		hCheckBtDeviceStatus.sendEmptyMessage(0);
+
+		if (!getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_full_version), false)) {
+			releaseIabHelper();
+			if (mHelper == null)
+				mHelper = new IabHelper(this, IABKey);
+			mHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
+				public void onIabSetupFinished(IabResult result) {
+					if (!result.isSuccess()) {
+						releaseIabHelper();
+						ToastUiThread(SettingActivity.this, getString(R.string.iabhelper_failed), Toast.LENGTH_SHORT);
+						return;
+					}
+					mHelper.queryInventoryAsync(new QueryInventoryFinishedListener() {
+						@Override
+						public void onQueryInventoryFinished(IabResult result, Inventory inv) {
+							if (result.isFailure()) {
+								releaseIabHelper();
+								ToastUiThread(SettingActivity.this, getString(R.string.iabhelper_failed), Toast.LENGTH_SHORT);
+								return;
+							}
+							if (inv.getPurchase(FullVersionID) != null) {
+								getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_full_version), true).commit();
+								ToastUiThread(SettingActivity.this, getString(R.string.iabhelper_fullversion), Toast.LENGTH_LONG);
+								hSetupDefaultData.sendEmptyMessage(0);
+								releaseIabHelper();
+							}
+						}
+					});
+				}
+			});
+		}
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		SetDefaultData();
+		hSetupDefaultData.sendEmptyMessage(0);
 	}
 
 	Handler hCheckBtDeviceStatus = new Handler() {
@@ -86,6 +115,14 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 				}
 			}
 
+		}
+	};
+
+	Handler hSetupDefaultData = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			super.handleMessage(msg);
+			SetDefaultData();
 		}
 	};
 
@@ -180,7 +217,7 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 		} else if (getString(R.string.key_notify_vibrate).equals(preference.getKey())) {
 			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.pref_warning_vibrator), (String) newValue).commit();
 		}
-		SetDefaultData();
+		hSetupDefaultData.sendEmptyMessage(0);
 		return true;
 	}
 
@@ -188,17 +225,14 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 	public boolean onPreferenceClick(Preference preference) {
 		if (getString(R.string.key_setting_support_me).equals(preference.getKey())) {
 			releaseIabHelper();
-
 			if (mHelper == null)
 				mHelper = new IabHelper(this, IABKey);
-			BuyProveList.clear();
-			BuyProveList.add(FullVersionID);
 
 			mHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
 				public void onIabSetupFinished(IabResult result) {
 					if (!result.isSuccess()) {
-						Toast.makeText(SettingActivity.this, result.getMessage(), Toast.LENGTH_SHORT).show();
 						releaseIabHelper();
+						ToastUiThread(SettingActivity.this, getString(R.string.iabhelper_failed), Toast.LENGTH_SHORT);
 					} else {
 						mHelper.launchPurchaseFlow(SettingActivity.this, FullVersionID, BuyFullVersionRequestCode, new OnIabPurchaseFinishedListener() {
 							@Override
@@ -206,33 +240,35 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 								if (result.isFailure()) {
 									if (result.getResponse() == IabHelper.BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED) {
 										getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_full_version), true).commit();
-										Toast.makeText(SettingActivity.this, R.string.iabhelper_fullversion, Toast.LENGTH_LONG).show();
+										ToastUiThread(SettingActivity.this, getString(R.string.iabhelper_fullversion), Toast.LENGTH_LONG);
 									} else {
 										getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_full_version), false).commit();
-										Toast.makeText(SettingActivity.this, result.getMessage(), Toast.LENGTH_SHORT).show();
+										ToastUiThread(SettingActivity.this, result.getMessage(), Toast.LENGTH_SHORT);
 									}
 								} else if ((result.isSuccess()) && (info.getSku().equals(FullVersionID))) {
 									getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_full_version), true).commit();
-									Toast.makeText(SettingActivity.this, R.string.iabhelper_fullversion, Toast.LENGTH_LONG).show();
+									ToastUiThread(SettingActivity.this, getString(R.string.iabhelper_fullversion), Toast.LENGTH_LONG);
 								} else {
 									getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_full_version), false).commit();
-									Toast.makeText(SettingActivity.this, result.getMessage(), Toast.LENGTH_SHORT).show();
+									ToastUiThread(SettingActivity.this, result.getMessage(), Toast.LENGTH_SHORT);
 								}
 								releaseIabHelper();
-								SetDefaultData();
+								hSetupDefaultData.sendEmptyMessage(0);
 							}
 						}, IABRequestCode);
 					}
 				}
 			});
 		}
-//		else if ((getString(R.string.key_setting_auto_start).equals(preference.getKey())) || (getString(R.string.key_notify_popwindow).equals(preference.getKey()))
-//				|| (getString(R.string.key_notify_flash).equals(preference.getKey())) || (getString(R.string.key_notify_screen).equals(preference.getKey()))) {
-//			if (!getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_full_version), false)) {
-//				Toast.makeText(SettingActivity.this, R.string.support_me_text, Toast.LENGTH_LONG).show();
-//			}
-//		}
 		return true;
+	}
+
+	public void ToastUiThread(final Context context, final String strMessage, final int duration) {
+		runOnUiThread(new Runnable() {
+			public void run() {
+				Toast.makeText(context, strMessage, duration).show();
+			}
+		});
 	}
 
 	private void releaseIabHelper() {
@@ -244,9 +280,7 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-		if (mHelper != null)
-			mHelper.dispose();
-		mHelper = null;
+		releaseIabHelper();
 	}
 
 	public void reStartService() {

@@ -63,21 +63,24 @@ public class MonitorDeviceService extends Service {
 			e.printStackTrace();
 		}
 
-		if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_setting_auto_start), false) || intent.getBooleanExtra(SettingActivity.StartFromActivity, false)) {
-			registerReceiver(brReceiver, new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED));
-			registerReceiver(brReceiver, new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED));
-			// registerReceiver(brReceiver, new
-			// IntentFilter(BluetoothDevice.ACTION_ACL_CONNECTED));
-			// registerReceiver(brReceiver, new
-			// IntentFilter(BluetoothDevice.ACTION_FOUND));
-			showNotification();
-		} else {
+		try {
+			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_setting_auto_start), false) || intent.getBooleanExtra(SettingActivity.StartFromActivity, false)) {
+				registerReceiver(brReceiver, new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED));
+				registerReceiver(brReceiver, new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED));
+				// registerReceiver(brReceiver, new
+				// IntentFilter(BluetoothDevice.ACTION_ACL_CONNECTED));
+				// registerReceiver(brReceiver, new
+				// IntentFilter(BluetoothDevice.ACTION_FOUND));
+				showNotification();
+			} else {
+				stopSelf();
+			}
+		} catch (NullPointerException e) {
+			e.printStackTrace();
 			stopSelf();
 		}
 		return super.onStartCommand(intent, flags, startId);
 	}
-
-
 
 	private final BroadcastReceiver brReceiver = new BroadcastReceiver() {
 

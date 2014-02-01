@@ -18,12 +18,12 @@
     <string name="select_btdevice">Select Bluetooth device</string>
     <string name="auto_start">Autostart at reboot</string>
     <string name="support_me">Support this App</string>
-    <string name="support_me_hint">Your support can help me to develop more apps,\n Support this app, all features are enable.\n If you had supported, please click here to retrieve the original transaction data!</string>
+    <string name="support_me_hint">Your support can help me to develop more apps,\nSupport this app, all features are enabled.\nIf you had supported, please click here to retrieve the original transaction data!</string>
     <string name="option_on">On</string>
     <string name="option_off">Off</string>
     <string name="option_ok">I know</string>
-    <string name="iabhelper_failed">Please try later!</string>
-    <string name="iabhelper_fullversion">Thanks, all features are enable.</string>
+    <string name="iabhelper_failed">Retrieve transaction data failed, Please try later!</string>
+    <string name="iabhelper_fullversion">Thanks, all features are enabled.</string>
 
     <string-array name="warning_option_string">
         <item>Off</item>
