@@ -15,15 +15,17 @@
     <string name="warning_popwinodw">Popup Dialog</string>
     <string name="warning_dialog">Warning!\n%s Bluetooth Device is lost, Please confirm!</string>
     <string name="action_settings">Device Setting</string>
-    <string name="select_btdevice">Select Bluetooth device</string>
+    <string name="select_btdevice">Select paired Bluetooth device</string>
     <string name="auto_start">Autostart at reboot</string>
     <string name="support_me">Support this App</string>
-    <string name="support_me_hint">Your support can help me to develop more apps,\nSupport this app, all features are enabled.\nIf you had supported, please click here to retrieve the original transaction data!</string>
+    <string name="support_me_hint">Your support can help me to develop more apps,\nSupport this app, all features are enabled.\nIf you had supported, please click here and upgrade to all features version.</string>
     <string name="option_on">On</string>
     <string name="option_off">Off</string>
     <string name="option_ok">I know</string>
     <string name="iabhelper_failed">Retrieve transaction data failed, Please try later!</string>
     <string name="iabhelper_fullversion">Thanks, all features are enabled.</string>
+    <string name="setting_autoenable_bluetooth">Auto enable Bluetooth</string>
+    <string name="pls_turn_on_bluetooth">Please enable Bluetooth</string>
 
     <string-array name="warning_option_string">
         <item>Off</item>
@@ -41,8 +43,11 @@
     <!-- Preference Key -->
     <string name="key_setting_title">key_setting_title</string>
     <string name="key_setting_select_btdevice">key_setting_select_btdevice</string>
+    <string name="key_setting_bt_device_address">pref_setting_bt_device_address</string>
+    <string name="key_setting_bt_device_name">pref_setting_bt_device_name</string>
     <string name="key_setting_auto_start">key_setting_auto_start</string>
     <string name="key_setting_support_me">key_setting_support_me</string>
+    <string name="key_setting_autoenable_bluetooth">key_autoenable_bluetooth</string>
     <string name="key_notify_title">key_notify_title</string>
     <string name="key_notify_screen">key_notify_screen</string>
     <string name="key_notify_flash">key_notify_flash</string>
@@ -50,16 +55,5 @@
     <string name="key_notify_vibrate">key_notify_vibrate</string>
     <string name="key_notify_popwindow">key_notify_popwindow</string>
     <string name="key_full_version">key_full_version</string>
-
-    <!-- Share Preference -->
-    <string name="pref_warning_text">pref_warning_text</string>
-    <string name="pref_setting_bt_device_address">pref_setting_bt_device_address</string>
-    <string name="pref_setting_bt_device_name">pref_setting_bt_device_name</string>
-    <string name="pref_setting_auto_start">pref_setting_auto_start</string>
-    <string name="pref_warning_screen">pref_warning_screen</string>
-    <string name="pref_warning_audio">pref_warning_audio</string>
-    <string name="pref_warning_flash">pref_warning_flash</string>
-    <string name="pref_warning_vibrator">pref_warning_vibrator</string>
-    <string name="pref_warning_popwindow">pref_warning_popwindow</string>
 
 </resources>

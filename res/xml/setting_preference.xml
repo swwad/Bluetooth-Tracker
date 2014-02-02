@@ -5,15 +5,21 @@
         android:key="@string/key_setting_title"
         android:title="@string/action_settings" >
         <ListPreference
+            android:enabled="false"
             android:key="@string/key_setting_select_btdevice"
-            android:title="@string/select_btdevice" android:enabled="false"/>
+            android:title="@string/select_btdevice" />
 
         <CheckBoxPreference
             android:defaultValue="false"
             android:enabled="false"
             android:key="@string/key_setting_auto_start"
             android:title="@string/auto_start" />
-        <Preference
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="@string/key_setting_autoenable_bluetooth"
+            android:title="@string/setting_autoenable_bluetooth" />
+
+        <Preference
             android:key="@string/key_setting_support_me"
             android:summary="@string/support_me_hint"
             android:title="@string/support_me" />
@@ -21,12 +27,6 @@
     <PreferenceCategory
         android:key="@string/key_notify_title"
         android:title="@string/warning_method" >
-        <CheckBoxPreference
-            android:defaultValue="false"
-            android:enabled="false"
-            android:key="@string/key_notify_popwindow"
-            android:title="@string/warning_popwinodw" />
-
         <ListPreference
             android:defaultValue="0"
             android:entries="@array/warning_option_string"
@@ -40,6 +40,11 @@
             android:key="@string/key_notify_vibrate"
             android:title="@string/warning_vibrate" />
 
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:enabled="false"
+            android:key="@string/key_notify_popwindow"
+            android:title="@string/warning_popwinodw" />
         <CheckBoxPreference
             android:defaultValue="false"
             android:enabled="false"

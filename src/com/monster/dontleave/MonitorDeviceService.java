@@ -21,7 +21,9 @@ import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Parameters;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.SystemClock;
@@ -48,12 +50,20 @@ public class MonitorDeviceService extends Service {
 			}
 		}
 
-		if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address), "").length() == 0) {
+		if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.key_setting_bt_device_address), "").length() == 0) {
 			stopSelf();
 		}
-
-		BluetoothAdapter.getDefaultAdapter().enable();
+		if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_setting_autoenable_bluetooth), false)) {
+			BluetoothAdapter.getDefaultAdapter().enable();
+		}
 	}
+
+	Handler hCheckBtDeviceRSSI = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			super.handleMessage(msg);
+		}
+	};
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
@@ -64,7 +74,7 @@ public class MonitorDeviceService extends Service {
 		}
 
 		try {
-			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_setting_auto_start), false) || intent.getBooleanExtra(SettingActivity.StartFromActivity, false)) {
+			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_setting_auto_start), false) || intent.getBooleanExtra(SettingActivity.StartFromActivity, false)) {
 				registerReceiver(brReceiver, new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED));
 				registerReceiver(brReceiver, new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED));
 				// registerReceiver(brReceiver, new
@@ -89,29 +99,19 @@ public class MonitorDeviceService extends Service {
 			bStopAllWarning = false;
 			BluetoothDevice bdDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 			if ((BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(intent.getAction())) || (BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED.equals(intent.getAction()))) {
-				if (bdDevice.getAddress().equalsIgnoreCase(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address), ""))) {
+				if (bdDevice.getAddress().equalsIgnoreCase(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.key_setting_bt_device_address), ""))) {
 
-					warningAudio(Integer.valueOf(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_audio), "0")));
-					warningFlash(Integer.valueOf(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_flash), "0")));
-					warningVibrator(Integer.valueOf(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_vibrator), "0")));
-					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_screen), false)) {
+					warningAudio(Integer.valueOf(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.key_notify_audio), "0")));
+					warningFlash(Integer.valueOf(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.key_notify_flash), "0")));
+					warningVibrator(Integer.valueOf(getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.key_notify_vibrate), "0")));
+					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_notify_screen), false)) {
 						warningScreen();
 					}
-					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_popwindow), false)) {
+					if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_notify_popwindow), false)) {
 						warningDialog();
 					}
 				}
 			}
-			// else if
-			// (BluetoothDevice.ACTION_ACL_CONNECTED.equals(intent.getAction()))
-			// {
-			// if
-			// (bdDevice.getAddress().equalsIgnoreCase(getSharedPreferences(getPackageName(),
-			// MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address),
-			// ""))) {
-			// hFindDevice.removeCallbacksAndMessages(null);
-			// }
-			// }
 		}
 	};
 
@@ -131,7 +131,7 @@ public class MonitorDeviceService extends Service {
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(MonitorDeviceService.this);
 		builder.setTitle(R.string.app_name);
-		builder.setMessage(String.format(getString(R.string.warning_dialog), getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_name), "")));
+		builder.setMessage(String.format(getString(R.string.warning_dialog), getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.key_setting_bt_device_name), "")));
 		builder.setPositiveButton(R.string.option_ok, new OnClickListener() {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
@@ -229,7 +229,7 @@ public class MonitorDeviceService extends Service {
 		// notification.flags = Notification.FLAG_NO_CLEAR;
 		PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, MonitorDeviceService.class), 0);
 		notification.setLatestEventInfo(this, getString(R.string.run_in_service),
-				getString(R.string.connecting_device) + getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_name), ""), contentIntent);
+				getString(R.string.connecting_device) + getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.key_setting_bt_device_name), ""), contentIntent);
 		mNM = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		mNM.notify(R.string.app_name, notification);
 	}

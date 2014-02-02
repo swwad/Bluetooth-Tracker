@@ -42,7 +42,11 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		BluetoothAdapter.getDefaultAdapter().enable();
+
+		if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_setting_autoenable_bluetooth), false)) {
+			BluetoothAdapter.getDefaultAdapter().enable();
+		}
+
 		hCheckBtDeviceStatus.sendEmptyMessage(0);
 		addPreferencesFromResource(R.xml.setting_preference);
 		reStartService();
@@ -62,11 +66,11 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 						@Override
 						public void onQueryInventoryFinished(IabResult result, Inventory inv) {
 							if (result.isFailure()) {
-								releaseIabHelper();
 								ToastUiThread(SettingActivity.this, getString(R.string.iabhelper_failed), Toast.LENGTH_SHORT);
+								releaseIabHelper();
 								return;
 							}
-							if (inv.getPurchase(FullVersionID) != null) {
+							if ((inv.getPurchase(FullVersionID) != null) && inv.getPurchase(FullVersionID).getPurchaseState() == 0) {
 								getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_full_version), true).commit();
 								ToastUiThread(SettingActivity.this, getString(R.string.iabhelper_fullversion), Toast.LENGTH_LONG);
 								hSetupDefaultData.sendEmptyMessage(0);
@@ -100,7 +104,7 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 					for (BluetoothDevice device : pairedDevices) {
 						entryDeviceValues[i] = device.getAddress();
 						entryDevice[i] = device.getName();
-						if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address), "").equalsIgnoreCase(device.getAddress()))
+						if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.key_setting_bt_device_address), "").equalsIgnoreCase(device.getAddress()))
 							listPref.setSummary(device.getName());
 						i++;
 					}
@@ -131,9 +135,14 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 		String[] OptionValue = getResources().getStringArray(R.array.warning_option_value);
 
 		CheckBoxPreference cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_setting_auto_start));
-		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_setting_auto_start), false));
+		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_setting_auto_start), false));
 		cbPref.setOnPreferenceChangeListener(this);
 		cbPref.setEnabled(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_full_version), false));
+
+		cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_setting_autoenable_bluetooth));
+		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_setting_autoenable_bluetooth), false));
+		cbPref.setOnPreferenceChangeListener(this);
+		cbPref.setEnabled(true);
 
 		Preference pref = (Preference) findPreference(getString(R.string.key_setting_support_me));
 		if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_full_version), false)) {
@@ -145,7 +154,7 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 
 		ListPreference listPref = (ListPreference) findPreference(getString(R.string.key_notify_audio));
 		for (int i = 0; i < OptionValue.length; i++) {
-			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_audio), "0").equalsIgnoreCase(OptionValue[i])) {
+			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.key_notify_audio), "0").equalsIgnoreCase(OptionValue[i])) {
 				listPref.setSummary(OptionString[i]);
 				break;
 			}
@@ -155,7 +164,7 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 
 		listPref = (ListPreference) findPreference(getString(R.string.key_notify_vibrate));
 		for (int i = 0; i < OptionValue.length; i++) {
-			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_vibrator), "0").equalsIgnoreCase(OptionValue[i])) {
+			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.key_notify_vibrate), "0").equalsIgnoreCase(OptionValue[i])) {
 				listPref.setSummary(OptionString[i]);
 				break;
 			}
@@ -165,8 +174,7 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 
 		listPref = (ListPreference) findPreference(getString(R.string.key_notify_flash));
 		for (int i = 0; i < OptionValue.length; i++) {
-			String sss = getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_flash), "0");
-			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_warning_flash), "0").equalsIgnoreCase(OptionValue[i])) {
+			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.key_notify_flash), "0").equalsIgnoreCase(OptionValue[i])) {
 				listPref.setSummary(OptionString[i]);
 				break;
 			}
@@ -176,16 +184,16 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 			listPref.setEnabled(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_full_version), false));
 		} else {
 			listPref.setEnabled(false);
-			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.pref_warning_flash), "0").commit();
+			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.key_notify_flash), "0").commit();
 		}
 
 		cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_notify_screen));
-		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_screen), false));
+		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_notify_screen), false));
 		cbPref.setOnPreferenceChangeListener(this);
 		cbPref.setEnabled(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_full_version), false));
 
 		cbPref = (CheckBoxPreference) findPreference(getString(R.string.key_notify_popwindow));
-		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.pref_warning_popwindow), false));
+		cbPref.setChecked(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_notify_popwindow), false));
 		cbPref.setOnPreferenceChangeListener(this);
 		cbPref.setEnabled(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_full_version), false));
 	}
@@ -193,32 +201,42 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 	@Override
 	public boolean onPreferenceChange(Preference preference, Object newValue) {
 		if (getString(R.string.key_setting_select_btdevice).equals(preference.getKey())) {
-			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.pref_setting_bt_device_address), (String) newValue).commit();
+			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.key_setting_bt_device_address), (String) newValue).commit();
 
 			for (BluetoothDevice device : pairedDevices) {
-				if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address), "").equalsIgnoreCase(device.getAddress())) {
+				if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.key_setting_bt_device_address), "").equalsIgnoreCase(device.getAddress())) {
 					((ListPreference) findPreference(getString(R.string.key_setting_select_btdevice))).setSummary(device.getName());
-					getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.pref_setting_bt_device_name), device.getName()).commit();
+					getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.key_setting_bt_device_name), device.getName()).commit();
 					break;
 				}
 			}
 			reStartService();
 		} else if (getString(R.string.key_setting_auto_start).equals(preference.getKey())) {
-			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.pref_setting_auto_start), (Boolean) newValue).commit();
+			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_setting_auto_start), (Boolean) newValue).commit();
 			reStartService();
+		} else if (getString(R.string.key_setting_autoenable_bluetooth).equals(preference.getKey())) {
+			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_setting_autoenable_bluetooth), (Boolean) newValue).commit();
+			BluetoothAdapter.getDefaultAdapter().enable();
 		} else if (getString(R.string.key_notify_audio).equals(preference.getKey())) {
-			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.pref_warning_audio), (String) newValue).commit();
+			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.key_notify_audio), (String) newValue).commit();
 		} else if (getString(R.string.key_notify_flash).equals(preference.getKey())) {
-			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.pref_warning_flash), (String) newValue).commit();
+			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.key_notify_flash), (String) newValue).commit();
 		} else if (getString(R.string.key_notify_popwindow).equals(preference.getKey())) {
-			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.pref_warning_popwindow), (Boolean) newValue).commit();
+			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_notify_popwindow), (Boolean) newValue).commit();
 		} else if (getString(R.string.key_notify_screen).equals(preference.getKey())) {
-			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.pref_warning_screen), (Boolean) newValue).commit();
+			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_notify_screen), (Boolean) newValue).commit();
 		} else if (getString(R.string.key_notify_vibrate).equals(preference.getKey())) {
-			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.pref_warning_vibrator), (String) newValue).commit();
+			getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putString(getString(R.string.key_notify_vibrate), (String) newValue).commit();
 		}
 		hSetupDefaultData.sendEmptyMessage(0);
 		return true;
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (!mHelper.handleActivityResult(requestCode, resultCode, data)) {
+			super.onActivityResult(requestCode, resultCode, data);
+		}
 	}
 
 	@Override
@@ -231,26 +249,17 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 			mHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
 				public void onIabSetupFinished(IabResult result) {
 					if (!result.isSuccess()) {
-						releaseIabHelper();
 						ToastUiThread(SettingActivity.this, getString(R.string.iabhelper_failed), Toast.LENGTH_SHORT);
+						releaseIabHelper();
 					} else {
 						mHelper.launchPurchaseFlow(SettingActivity.this, FullVersionID, BuyFullVersionRequestCode, new OnIabPurchaseFinishedListener() {
 							@Override
 							public void onIabPurchaseFinished(IabResult result, Purchase info) {
-								if (result.isFailure()) {
-									if (result.getResponse() == IabHelper.BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED) {
-										getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_full_version), true).commit();
-										ToastUiThread(SettingActivity.this, getString(R.string.iabhelper_fullversion), Toast.LENGTH_LONG);
-									} else {
-										getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_full_version), false).commit();
-										ToastUiThread(SettingActivity.this, result.getMessage(), Toast.LENGTH_SHORT);
-									}
-								} else if ((result.isSuccess()) && (info.getSku().equals(FullVersionID))) {
+								if ((result != null) && (result.getResponse() == IabHelper.BILLING_RESPONSE_RESULT_ITEM_ALREADY_OWNED)) {
 									getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_full_version), true).commit();
 									ToastUiThread(SettingActivity.this, getString(R.string.iabhelper_fullversion), Toast.LENGTH_LONG);
 								} else {
 									getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putBoolean(getString(R.string.key_full_version), false).commit();
-									ToastUiThread(SettingActivity.this, result.getMessage(), Toast.LENGTH_SHORT);
 								}
 								releaseIabHelper();
 								hSetupDefaultData.sendEmptyMessage(0);
@@ -285,10 +294,16 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 
 	public void reStartService() {
 		stopService(new Intent(SettingActivity.this, MonitorDeviceService.class));
-		if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.pref_setting_bt_device_address), "").length() == 0) {
-			Toast.makeText(SettingActivity.this, R.string.warning_no_btdevice, Toast.LENGTH_SHORT).show();
+		if (BluetoothAdapter.getDefaultAdapter().isEnabled()) {
+			if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getString(getString(R.string.key_setting_bt_device_address), "").length() == 0) {
+				Toast.makeText(SettingActivity.this, R.string.warning_no_btdevice, Toast.LENGTH_SHORT).show();
+			} else {
+				startService(new Intent(SettingActivity.this, MonitorDeviceService.class).putExtra(StartFromActivity, true));
+			}
 		} else {
-			startService(new Intent(SettingActivity.this, MonitorDeviceService.class).putExtra(StartFromActivity, true));
+			if (!getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_setting_autoenable_bluetooth), false)) {
+				Toast.makeText(SettingActivity.this, R.string.pls_turn_on_bluetooth, Toast.LENGTH_SHORT).show();
+			}
 		}
 	}
 }
