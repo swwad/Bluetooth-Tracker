@@ -170,7 +170,7 @@ public class SettingActivity extends PreferenceActivity implements OnPreferenceC
 			}
 		}
 		listPref.setOnPreferenceChangeListener(this);
-		listPref.setEnabled(true);
+		listPref.setEnabled(getSharedPreferences(getPackageName(), MODE_PRIVATE).getBoolean(getString(R.string.key_full_version), false));
 
 		listPref = (ListPreference) findPreference(getString(R.string.key_notify_flash));
 		for (int i = 0; i < OptionValue.length; i++) {
